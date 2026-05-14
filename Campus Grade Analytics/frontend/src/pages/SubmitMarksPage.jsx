@@ -89,6 +89,7 @@ export default function SubmitMarksPage() {
             type="number"
             min="0"
             max="100"
+            step="0.01"
             className="w-full rounded-2xl border border-slate-300 bg-transparent px-4 py-3 outline-none dark:border-slate-700"
             value={form.totalMarks}
             onChange={(event) => setForm((current) => ({ ...current, totalMarks: event.target.value }))}
