@@ -52,12 +52,13 @@ router.get("/seed-demo", async (req, res) => {
   for (const entry of data) {
     await prisma.submission.create({
       data: {
-      totalMarks: entry.marks,
-      obtainedGrade: entry.grade,
-      normalizedGrade: entry.grade,
-      originalGrade: entry.grade,
-      isAnonymous: true,
-      courseId: course.id
+        totalMarks: entry.marks,
+        obtainedGrade: entry.grade,
+        normalizedGrade: entry.grade,
+        originalGrade: entry.grade,
+        submissionHash: `${entry.marks}-${entry.grade}-${Date.now()}-${Math.random()}`,
+        isAnonymous: true,
+        courseId: course.id
       }
     });
   }
