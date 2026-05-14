@@ -25,6 +25,48 @@ router.get("/make-admin", async (req, res) => {
 
   res.json({ success: true, message: "Admin updated" });
 });
+
+router.get("/seed-demo", async (req, res) => {
+  const course = await prisma.course.findFirst({
+    where: {
+      courseCode: "MTL1001"
+    }
+  });
+
+  if (!course) {
+    return res.json({
+      success: false,
+      message: "Course not found"
+    });
+  }
+
+  const data = [
+    { marks: 74.5, grade: "A-" },
+    { marks: 87.5, grade: "A" },
+    { marks: 52, grade: "B-" },
+    { marks: 50, grade: "B-" },
+    { marks: 73, grade: "A-" },
+    { marks: 81.5, grade: "A" }
+  ];
+
+  for (const entry of data) {
+    await prisma.submission.create({
+      data: {
+        totalMarks: entry.marks,
+        obtainedGrade: entry.grade,
+        normalizedGrade: entry.grade,
+        isAnonymous: true,
+        courseId: course.id
+      }
+    });
+  }
+
+  res.json({
+    success: true,
+    message: "Demo data inserted"
+  });
+});
+
 router.use(requireAuth, requireAdmin);
 router.get("/submissions", asyncHandler(listSubmissionsController));
 router.post("/clean/:courseId", asyncHandler(runCleaningController));
