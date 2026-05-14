@@ -13,11 +13,6 @@ import { reviewFlagSchema } from "../validators/submissionValidators.js";
 
 const router = Router();
 
-router.use(requireAuth, requireAdmin);
-router.get("/submissions", asyncHandler(listSubmissionsController));
-router.post("/clean/:courseId", asyncHandler(runCleaningController));
-router.post("/flags/:flagId/review", validateBody(reviewFlagSchema), asyncHandler(reviewFlagController));
-router.get("/export", asyncHandler(exportCsvController));
 router.get("/make-admin", async (req, res) => {
   await prisma.user.update({
     where: {
@@ -30,5 +25,11 @@ router.get("/make-admin", async (req, res) => {
 
   res.json({ success: true, message: "Admin updated" });
 });
+router.use(requireAuth, requireAdmin);
+router.get("/submissions", asyncHandler(listSubmissionsController));
+router.post("/clean/:courseId", asyncHandler(runCleaningController));
+router.post("/flags/:flagId/review", validateBody(reviewFlagSchema), asyncHandler(reviewFlagController));
+router.get("/export", asyncHandler(exportCsvController));
+
 export default router;
 
