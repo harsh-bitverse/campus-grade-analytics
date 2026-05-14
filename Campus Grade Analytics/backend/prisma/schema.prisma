@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  FLAGGED
+  REJECTED
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  passwordHash   String
+  role           Role           @default(STUDENT)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  submissions    Submission[]
+  reviewedFlags  FlaggedEntry[] @relation("FlagReviewer")
+}
+
+model Course {
+  id               String             @id @default(cuid())
+  courseCode       String
+  courseName       String
+  semester         String
+  professor        String?
+  isArchived       Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  submissions      Submission[]
+  estimatedCutoffs EstimatedCutoff[]
+  flaggedEntries   FlaggedEntry[]
+
+  @@unique([courseCode, semester])
+}
+
+model Submission {
+  id              String            @id @default(cuid())
+  courseId        String
+  userId          String?
+  totalMarks      Float
+  originalGrade   String
+  normalizedGrade Int
+  isAnonymous     Boolean           @default(true)
+  submissionHash  String
+  status          SubmissionStatus  @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  cleanedRecord   CleanedSubmission?
+  flaggedEntries  FlaggedEntry[]
+
+  @@index([courseId, normalizedGrade, totalMarks])
+  @@index([submissionHash])
+}
+
+model CleanedSubmission {
+  id             String      @id @default(cuid())
+  submissionId   String      @unique
+  cleanedMarks   Float
+  cleanedGrade   Int
+  isSuspicious   Boolean     @default(false)
+  cleaningReason String?
+  confidenceHint Float?
+  createdAt      DateTime    @default(now())
+  submission     Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model EstimatedCutoff {
+  id                 String    @id @default(cuid())
+  courseId           String
+  gradeValue         Int
+  gradeLabel         String
+  estimatedLowerMark Float
+  highestBelowMark   Float?
+  confidenceScore    Float
+  sampleSize         Int
+  computedAt         DateTime  @default(now())
+  course             Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, computedAt])
+}
+
+model FlaggedEntry {
+  id            String      @id @default(cuid())
+  submissionId  String
+  courseId      String
+  reason        String
+  severity      String
+  details       Json?
+  isResolved    Boolean     @default(false)
+  reviewedById  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  submission    Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  reviewedBy    User?       @relation("FlagReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([courseId, isResolved])
+}
+
